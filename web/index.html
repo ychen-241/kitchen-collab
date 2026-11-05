@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kitchen-collab · 后厨出品协同系统</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --card: #ffffff; --line: #e2e8f0; --ink: #1a2233;
+    --ink2: #64748b; --blue: #2563eb; --blue-bg: #eff6ff;
+    --green: #16a34a; --green-bg: #f0fdf4; --red: #dc2626; --red-bg: #fef2f2;
+    --amber: #d97706; --amber-bg: #fffbeb; --violet: #7c3aed; --violet-bg: #f5f3ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+         background: var(--bg); color: var(--ink); font-size: 14px; }
+  header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;
+           padding: 18px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 19px; font-weight: 700; }
+  header .sub { font-size: 12px; opacity: .85; }
+  header .weights { font-size: 11.5px; background: rgba(255,255,255,.14);
+                    padding: 4px 10px; border-radius: 12px; }
+  header .spacer { flex: 1; }
+  button { border: none; border-radius: 6px; padding: 6px 12px; font-size: 12.5px;
+           cursor: pointer; font-family: inherit; transition: filter .15s; }
+  button:hover { filter: brightness(.93); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-reset { background: rgba(255,255,255,.18); color: #fff; }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-amber { background: var(--amber); color: #fff; }
+  .btn-ghost { background: #eef2f7; color: var(--ink); }
+  main { padding: 16px 20px 40px; display: grid; gap: 14px;
+         grid-template-columns: 330px 1fr; max-width: 1500px; margin: 0 auto; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+           padding: 14px 16px; }
+  .panel h2 { font-size: 14.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .panel h2 .tag { font-size: 11px; color: var(--ink2); font-weight: 400; }
+  .left { display: flex; flex-direction: column; gap: 14px; }
+  label.f { font-size: 12px; color: var(--ink2); display: block; margin: 8px 0 3px; }
+  select, input[type=text], input[type=number] { width: 100%; padding: 6px 8px;
+      border: 1px solid var(--line); border-radius: 6px; font-size: 13px; font-family: inherit;
+      background: #fff; color: var(--ink); }
+  .menu-grid { display: flex; flex-direction: column; gap: 5px; max-height: 300px; overflow-y: auto; }
+  .tbl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 2px; }
+  .tcell { text-align: center; padding: 7px 0; border-radius: 7px; font-size: 12.5px;
+           font-weight: 600; border: 1px solid var(--line); background: #fff;
+           cursor: pointer; user-select: none; }
+  .tcell:hover { border-color: var(--blue); }
+  .tcell.sel { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .tcell.occ { background: var(--red-bg); border-color: #fca5a5; color: var(--red);
+               cursor: not-allowed; opacity: .75; }
+  .tcell.occ::after { content: " ·占用"; font-weight: 400; font-size: 10px; }
+  .menu-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+               border: 1px solid var(--line); border-radius: 7px; cursor: pointer; }
+  .menu-item:hover { border-color: var(--blue); background: var(--blue-bg); }
+  .menu-item .nm { font-weight: 600; }
+  .menu-item .meta { font-size: 11px; color: var(--ink2); margin-left: auto; text-align: right; }
+  .cart { display: flex; flex-direction: column; gap: 6px; }
+  .cart-row { border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; }
+  .cart-row .top { display: flex; align-items: center; gap: 8px; }
+  .cart-row .top b { font-size: 13px; }
+  .cart-row .top .del { margin-left: auto; background: var(--red-bg); color: var(--red); padding: 2px 8px; }
+  .cart-row .opts { display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
+  .cart-row .opts select, .cart-row .opts input { width: auto; font-size: 12px; padding: 3px 6px; }
+  .cart-row .opts input.alg { width: 90px; }
+  .cart-row .opts label { font-size: 11.5px; color: var(--ink2); display: flex; align-items: center; gap: 3px; }
+  .empty { color: var(--ink2); font-size: 12.5px; padding: 10px; text-align: center;
+           border: 1px dashed var(--line); border-radius: 7px; }
+  /* 订单卡 */
+  #orders { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+  .order { border: 1px solid var(--line); border-radius: 9px; padding: 11px 13px; background: #fff; }
+  .order.blocked { border-color: #fca5a5; background: var(--red-bg); }
+  .order .hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .order .hd b { font-size: 14px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .b-status-created, .b-status-parsed, .b-status-validated { background: var(--blue-bg); color: var(--blue); }
+  .b-status-scheduled { background: var(--violet-bg); color: var(--violet); }
+  .b-status-cooking { background: var(--amber-bg); color: var(--amber); }
+  .b-status-ready { background: var(--green-bg); color: var(--green); }
+  .b-status-served, .b-status-closed { background: #eef2f7; color: var(--ink2); }
+  .b-status-exception { background: var(--red-bg); color: var(--red); }
+  .b-alg { background: var(--red); color: #fff; }
+  .b-src { background: #f1f5f9; color: var(--ink2); font-weight: 400; }
+  .order .meta { font-size: 11.5px; color: var(--ink2); margin-top: 4px; }
+  .issue { font-size: 12px; color: var(--red); background: #fff; border: 1px solid #fecaca;
+           border-radius: 6px; padding: 5px 8px; margin-top: 6px; }
+  .issue.warn { color: var(--amber); border-color: #fde68a; background: var(--amber-bg); }
+  .issue .cand { color: var(--blue); }
+  .olines { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .oline { display: flex; align-items: center; gap: 7px; font-size: 12.5px;
+           padding: 4px 7px; background: #f8fafc; border-radius: 6px; }
+  .oline .st { font-size: 10.5px; padding: 1px 6px; border-radius: 8px; background: #e2e8f0; color: var(--ink2); }
+  .st-cooking { background: var(--amber-bg) !important; color: var(--amber) !important; }
+  .st-ready { background: var(--green-bg) !important; color: var(--green) !important; }
+  .st-served { background: #eef2f7 !important; }
+  .oline .alg { color: var(--red); font-size: 11px; }
+  .oline .station { margin-left: auto; color: var(--ink2); font-size: 11px; }
+  .obtns { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+  /* 看板 */
+  #board { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .station { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .station .sh { background: var(--blue); color: #fff; padding: 7px 12px; font-size: 13.5px;
+                 font-weight: 700; display: flex; }
+  .station .sh .cnt { margin-left: auto; font-weight: 400; font-size: 12px; opacity: .9; }
+  .task { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .task:last-child { border-bottom: none; }
+  .task.done { opacity: .55; }
+  .task .t1 { display: flex; align-items: baseline; gap: 8px; }
+  .task .score { font-weight: 800; color: var(--red); font-size: 13.5px; min-width: 52px; }
+  .task .score.mid { color: var(--amber); }
+  .task .score.low { color: var(--ink2); }
+  .task .dish { font-weight: 700; }
+  .task .tbl { margin-left: auto; font-size: 11.5px; color: var(--ink2); }
+  .task .reasons { font-size: 11.5px; color: var(--ink2); margin-top: 3px; line-height: 1.55; }
+  .task .reasons em { font-style: normal; color: var(--blue); }
+  .task .tbtns { margin-top: 6px; display: flex; gap: 6px; }
+  /* 建议 + 指标 */
+  .sug { border: 1px solid #fde68a; background: var(--amber-bg); border-radius: 7px;
+         padding: 7px 10px; font-size: 12.5px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sug.confirmed { border-color: #bbf7d0; background: var(--green-bg); }
+  .sug button { margin-left: auto; }
+  .mrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .mcard { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
+  .mcard .v { font-size: 19px; font-weight: 800; }
+  .mcard .k { font-size: 11.5px; color: var(--ink2); margin-top: 2px; }
+  .mcard.ok .v { color: var(--green); } .mcard.bad .v { color: var(--red); }
+  #toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+           background: #1a2233; color: #fff; padding: 9px 18px; border-radius: 8px;
+           font-size: 13px; display: none; z-index: 9; max-width: 80vw; }
+  #toast.err { background: var(--red); }
+  .full { grid-column: 1 / -1; }
+  .hint { font-size: 11.5px; color: var(--ink2); line-height: 1.6; margin-top: 8px;
+          border-top: 1px dashed var(--line); padding-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>后厨出品协同系统</h1>
+  <span class="sub">建议 → 人工确认 → 审计留痕 · 不做静默执行</span>
+  <span class="weights" id="weights"></span>
+  <span class="spacer"></span>
+  <button class="btn-reset" onclick="resetAll()">↺ 重置演示</button>
+</header>
+
+<main>
+  <!-- 左列：新建订单 -->
+  <div class="left">
+    <div class="panel">
+      <h2>① 来客开单 <span class="tag">添加桌号 → 创建一格</span></h2>
+      <label class="f">单据来源</label>
+      <select id="src" onchange="render()">
+        <option value="pos">POS 收银单</option>
+        <option value="dine_scan">堂食扫码单</option>
+        <option value="paper">纸质加单（补录）</option>
+        <option value="phone">电话单（补录）</option>
+        <option value="takeout">外卖单</option>
+      </select>
+      <div id="dineBox">
+        <label class="f">桌号（固定 12 桌 · 一桌一单，占用中的桌不可再开）</label>
+        <div class="tbl-grid" id="tblGrid"></div>
+      </div>
+      <div id="takeoutBox" style="display:none">
+        <label class="f">外卖单号</label>
+        <input type="text" id="tbl" placeholder="如 WM-88">
+      </div>
+      <label class="f">点菜（点击添加）</label>
+      <div class="menu-grid" id="menuGrid"></div>
+    </div>
+    <div class="panel">
+      <h2>② 购物车 <span class="tag" id="cartCount"></span></h2>
+      <div class="cart" id="cart"><div class="empty">还没点菜，从上面点击菜品添加</div></div>
+      <button class="btn-blue" style="width:100%;margin-top:10px;padding:9px"
+              onclick="submitOrder()">创建订单（走归一 → 校验 → 排菜）</button>
+      <div class="hint">规则：过敏备注逐行传递；过敏冲突 <b>BLOCK 拦截</b>；
+        含过敏的单要等<b>食安签核</b>才排菜；催菜按权重库<b>加分</b>提高优先级。</div>
+    </div>
+  </div>
+
+  <!-- 右列 -->
+  <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+    <div class="panel">
+      <h2>班次指标 <span class="tag">口径统一：出餐 = 接单 → 上桌</span></h2>
+      <div class="mrow" id="metrics"></div>
+    </div>
+    <div class="panel" id="sugPanel" style="display:none">
+      <h2>待确认建议 <span class="tag">写操作闸门：确认后才执行</span></h2>
+      <div id="sugList"></div>
+    </div>
+    <div class="panel">
+      <h2>订单池 <span class="tag" id="ordCount"></span></h2>
+      <div id="orders"><div class="empty">暂无订单——从左侧「来客开单」开始</div></div>
+    </div>
+    <div class="panel">
+      <h2>档口看板 <span class="tag">每条排序都带理由 · 分数越高越先做</span></h2>
+      <div id="board"><div class="empty">看板空——订单通过校验后会出现在这里</div></div>
+    </div>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+"use strict";
+let S = null;                 // 最新状态快照
+let cart = [];                // {dish, qty, spec, allergy}
+let selTable = "";            // 当前选中的堂食桌号
+const SRC_NAME = {pos:"POS", dine_scan:"堂食扫码", takeout:"外卖", paper:"纸质", phone:"电话"};
+const FIXED_TABLES = ["T01","T02","T03","T04","T05","T06","T07","T08","T09","T10","T11","T12"];
+const $ = id => document.getElementById(id);
+
+function toast(msg, err) {
+  const t = $("toast");
+  t.textContent = msg; t.className = err ? "err" : "";
+  t.style.display = "block";
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = "none", 3200);
+}
+
+async function api(path, body) {
+  const r = await fetch("/api/" + path, body ? {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)} : {});
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(data.error || ("请求失败 " + r.status), true); throw new Error(data.error); }
+  return data;
+}
+
+async function refresh() {
+  try { S = await api("state"); render(); hideOffline(); }
+  catch (e) { showOffline(); }
+}
+
+// 后端不可达时的友好提示（例如直接双击打开本文件、或服务未启动）
+let _offlineBar = null;
+function showOffline() {
+  if (_offlineBar) return;
+  _offlineBar = document.createElement("div");
+  _offlineBar.style.cssText = "position:fixed;inset:auto 16px 16px 16px;z-index:99;background:#b91c1c;color:#fff;"
+    + "padding:14px 18px;border-radius:10px;font-size:14px;line-height:1.8;box-shadow:0 4px 16px rgba(0,0,0,.25)";
+  _offlineBar.innerHTML =
+    "<b>⚠ 后端服务未连接，页面无法加载数据</b><br>"
+    + "本页面需要引擎支持，不能直接双击打开。请：先关掉本页 → 在项目目录运行 "
+    + "<code style='background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px'>python -m kitchen_collab.main serve 8000</code>"
+    + " → 浏览器访问 <b>http://127.0.0.1:8000</b>";
+  document.body.appendChild(_offlineBar);
+}
+function hideOffline() {
+  if (_offlineBar) { _offlineBar.remove(); _offlineBar = null; }
+}
+
+// ---------- 渲染 ----------
+function render() {
+  if (!S) return;
+  $("weights").textContent =
+    `权重库  P0过敏 +${S.weights.allergen} · 催菜 +${S.weights.urge} · 等待 +${S.weights.wait_per_min}/分钟 · 外卖 +${S.weights.takeout} · 同档加压 +1（新单进档，他桌菜加分，本桌不变）`;
+
+  // 来源切换：堂食走固定桌号网格，外卖用自由单号
+  const isTakeout = $("src").value === "takeout";
+  $("dineBox").style.display = isTakeout ? "none" : "";
+  $("takeoutBox").style.display = isTakeout ? "" : "none";
+  if (isTakeout) selTable = "";
+
+  // 固定桌号网格：占用中的桌锁定（桌号跟随订单，一桌一单）
+  const occupied = new Set(S.orders.map(o => o.table_no));
+  if (!isTakeout && selTable && occupied.has(selTable)) selTable = ""; // 订单完成释放后自动取消选中
+  $("tblGrid").innerHTML = FIXED_TABLES.map(t => {
+    const occ = occupied.has(t);
+    return `<div class="tcell ${occ ? "occ" : (t === selTable ? "sel" : "")}"
+              ${occ ? "" : `onclick="pickTable('${t}')"`}>${t}</div>`;
+  }).join("");
+
+  // 菜单
+  const showAllergen = !["takeout"].includes($("src").value);
+  $("menuGrid").innerHTML = S.menu.map(m => `
+    <div class="menu-item" onclick="addCart('${m.name}')">
+      <span class="nm">${m.name}</span>
+      <span class="meta">${m.station} · ${m.total_minutes} 分钟
+        ${m.allergens.length ? `<br>含 ${m.allergens.join("/")}` : ""}</span>
+    </div>`).join("");
+
+  // 购物车
+  $("cartCount").textContent = cart.length ? `${cart.length} 项` : "";
+  $("cart").innerHTML = cart.length ? cart.map((c, i) => {
+    const m = S.menu.find(x => x.name === c.dish) || {spec_options: []};
+    return `<div class="cart-row">
+      <div class="top"><b>${c.dish}</b>
+        <label>数量 <input type="number" min="1" value="${c.qty}"
+          onchange="cart[${i}].qty=+this.value" style="width:52px"></label>
+        <button class="del" onclick="cart.splice(${i},1);renderCart()">移除</button></div>
+      <div class="opts">
+        ${m.spec_options.length ? `<label>口味
+          <select onchange="cart[${i}].spec=this.value">
+            ${m.spec_options.map(s => `<option ${s===c.spec?"selected":""}>${s}</option>`).join("")}
+          </select></label>` : ""}
+        ${m.allergens.length ? `<label>⚠ 过敏备注
+          <input class="alg" type="text" placeholder="如 花生" value="${c.allergy}"
+            onchange="cart[${i}].allergy=this.value"></label>` : ""}
+      </div></div>`;
+  }).join("") : `<div class="empty">还没点菜，从上面点击菜品添加</div>`;
+
+  // 指标
+  const m = S.metrics;
+  const avgOk = m.avg_serve_min != null && m.target_serve && m.avg_serve_min <= m.target_serve;
+  $("metrics").innerHTML = `
+    <div class="mcard ${avgOk ? "ok" : (m.avg_serve_min == null ? "" : "bad")}">
+      <div class="v">${m.avg_serve_min == null ? "—" : m.avg_serve_min + " 分"}</div>
+      <div class="k">出餐时长 / 目标 ≤ ${m.target_serve ?? "—"} 分</div></div>
+    <div class="mcard ${m.missed.length === 0 ? "ok" : "bad"}">
+      <div class="v">${m.missed.length}</div>
+      <div class="k">漏菜 / 目标 ≤ ${m.target_missed ?? "—"}</div></div>
+    <div class="mcard"><div class="v">${m.urge_count}</div><div class="k">催菜次数</div></div>
+    <div class="mcard ${m.allergen_rate === 100 ? "ok" : "bad"}">
+      <div class="v">${m.allergen_rate}%</div><div class="k">过敏传递率（硬门槛 100%）</div></div>
+    <div class="mcard"><div class="v">${S.audit_count}</div><div class="k">审计留痕条数</div></div>`;
+
+  // 建议
+  const pend = S.suggestions.filter(s => !s.confirmed);
+  $("sugPanel").style.display = S.suggestions.length ? "" : "none";
+  $("sugList").innerHTML = S.suggestions.slice(-6).map(s => `
+    <div class="sug ${s.confirmed ? "confirmed" : ""}">${s.confirmed ? "✔" : "⏳"} ${s.text}
+      ${s.confirmed ? "" : `<button class="btn-green" onclick="confirmSug('${s.id}')">厨师长确认</button>`}
+    </div>`).join("");
+
+  // 订单
+  $("ordCount").textContent = `${S.orders.length} 笔`;
+  $("orders").innerHTML = S.orders.length ? S.orders.map(orderCard).join("")
+    : `<div class="empty">暂无订单——从左侧「来客开单」开始</div>`;
+
+  // 看板
+  $("board").innerHTML = S.board.length ? S.board.map(st => `
+    <div class="station"><div class="sh">${st.station}档 <span class="cnt">${st.tasks.length} 单</span></div>
+      ${st.tasks.length ? st.tasks.map(taskCard).join("")
+        : `<div class="task" style="color:var(--ink2)">待命，暂无任务</div>`}
+    </div>`).join("") : `<div class="empty">看板空——订单通过校验后会出现在这里</div>`;
+}
+
+function orderCard(o) {
+  const blocked = o.status === "exception";
+  const stName = {created:"已接单", parsed:"已解析", validated:"待排菜", scheduled:"已排菜",
+                  cooking:"制作中", ready:"已出品", served:"已上桌", closed:"已结账",
+                  exception:"异常挂起", void:"已作废"}[o.status] || o.status;
+  return `<div class="order ${blocked ? "blocked" : ""}">
+    <div class="hd"><b>${o.table_no}</b>
+      <span class="badge b-src">${SRC_NAME[o.source] || o.source}</span>
+      <span class="badge b-status-${o.status}">${stName}</span>
+      ${o.needs_sign ? `<span class="badge b-alg">待食安签核</span>` : ""}
+      ${o.signed ? `<span class="badge" style="background:var(--green-bg);color:var(--green)">食安已签核</span>` : ""}
+    </div>
+    <div class="meta">${o.order_id} · 已等待 ${o.wait_min} 分钟</div>
+    ${o.issues.map(i => `<div class="issue ${i.level !== "blocker" ? "warn" : ""}">
+        [${i.code}] ${i.message}${i.candidates.length ? ` <span class="cand">候选：${i.candidates.join("/")}</span>` : ""}
+      </div>`).join("")}
+    <div class="olines">${o.lines.map(l => `
+      <div class="oline"><b>${l.dish_name}</b>${l.qty > 1 ? ` ×${l.qty}` : ""}
+        ${l.spec ? `<span style="color:var(--ink2)">${l.spec}</span>` : ""}
+        ${l.allergens.length ? `<span class="alg">⚠ ${l.allergens.join("、")}</span>` : ""}
+        <span class="st st-${l.status}">${{pending:"待做",cooking:"制作中",ready:"已出品",served:"已上桌",short:"缺料"}[l.status] || l.status}</span>
+        <span class="station">${l.station ? "→ " + l.station + "档" : ""}</span></div>`).join("")}
+    </div>
+    <div class="obtns">
+      ${o.needs_sign && blocked ? `<button class="btn-green" onclick="sign('${o.order_id}')">食安签核放行</button>` : ""}
+      ${o.needs_sign && !blocked ? `<button class="btn-green" onclick="sign('${o.order_id}')">食安签核</button>` : ""}
+      ${o.status === "scheduled" || o.status === "cooking"
+        ? `<button class="btn-amber" onclick="urge('${o.order_id}')">催菜（加分）</button>` : ""}
+    </div></div>`;
+}
+
+function taskCard(t) {
+  const sc = t.priority >= 100 ? "" : (t.priority >= 40 ? "mid" : "low");
+  const started = t.status !== "queued", finished = t.status === "finished";
+  return `<div class="task ${finished ? "done" : ""}">
+    <div class="t1"><span class="score ${sc}">${t.priority}分</span>
+      <span class="dish">${t.dish_name}${t.qty > 1 ? ` ×${t.qty}` : ""}</span>
+      <span class="tbl">${t.table_no} · ${t.eta_minutes}分钟</span></div>
+    <div class="reasons">${t.reasons.map(r => `<em>·</em> ${r}`).join("<br>")}</div>
+    <div class="tbtns">
+      ${!finished ? (started
+        ? `<button class="btn-green" onclick="cook('${t.order_id}','${t.dish_name}','finish')">完工上报</button>`
+        : `<button class="btn-amber" onclick="cook('${t.order_id}','${t.dish_name}','start')">开工</button>`)
+        : `<span class="badge" style="background:var(--green-bg);color:var(--green)">已完成</span>`}
+      ${!started ? `<button class="btn-ghost" onclick="suggest('${t.order_id}','${t.dish_name}','${t.table_no}')">改派建议…</button>` : ""}
+      ${!finished ? `<button class="btn-ghost" onclick="shortage('${t.order_id}','${t.dish_name}')">缺料</button>` : ""}
+    </div></div>`;
+}
+
+function renderCart() { if (S) render(); }
+
+// ---------- 交互 ----------
+function pickTable(t) { selTable = t; render(); }
+function addCart(name) {
+  const ex = cart.find(c => c.dish === name);
+  if (ex) ex.qty++; else cart.push({dish: name, qty: 1, spec: "", allergy: ""});
+  render();
+}
+async function submitOrder() {
+  if (!cart.length) return toast("先点菜再创建订单", true);
+  const isTakeout = $("src").value === "takeout";
+  const table = isTakeout ? $("tbl").value.trim() : selTable;
+  if (!table) return toast(isTakeout ? "填写外卖单号" : "先在上方点选一个空闲桌号", true);
+  const items = cart.map(c => ({
+    dish: c.dish, qty: c.qty, spec: c.spec,
+    notes: c.allergy.trim() ? [`过敏:${c.allergy.trim()}`] : []}));
+  const r = await api("orders", {source: $("src").value, table_no: table, items});
+  cart = []; selTable = ""; $("tbl").value = "";
+  const blocked = r.issues.filter(i => i.level === "blocker");
+  toast(blocked.length
+    ? `订单 ${r.order_id} 已创建，但被拦截：${blocked[0].message}`
+    : `订单 ${r.order_id} 已创建${r.hints.length ? "；" + r.hints.join("；") : ""}`,
+    blocked.length > 0);
+  refresh();
+}
+async function sign(oid)      { const r = await api("sign",   {order_id: oid}); toast("食安签核完成，已放行排菜"); refresh(); }
+async function urge(oid)      { const r = await api("urge",   {order_id: oid}); toast(r.message); refresh(); }
+async function shortage(oid, dish) { const r = await api("shortage", {order_id: oid, dish, material: ""}); toast(r.message); refresh(); }
+async function cook(oid, dish, action) {
+  const r = await api("cook", {order_id: oid, dish, action});
+  toast(r.message + (r.all_ready ? " ✔" : "")); refresh();
+}
+async function serve(oid)     { const r = await api("serve",  {order_id: oid}); toast(r.message); refresh(); }
+async function suggest(oid, dish, tbl) {
+  const to = prompt(`把「${dish}」（${tbl}）改派到哪个档口？\n可选：备用灶 / 其他档口名`, "备用灶");
+  if (!to) return;
+  const r = await api("suggest", {order_id: oid, dish, from: "", to});
+  toast("已生成建议（未执行）：" + r.text); refresh();
+}
+async function confirmSug(sid){ const r = await api("confirm", {suggestion_id: sid}); toast(r.message); refresh(); }
+async function resetAll() {
+  if (!confirm("重置演示环境？所有订单、看板、指标将清空。")) return;
+  await api("reset", {}); cart = []; toast("已重置"); refresh();
+}
+
+refresh();
+setInterval(refresh, 2000);   // 轮询：等待时长加分、看板重排自动刷新
+</script>
+</body>
+</html>

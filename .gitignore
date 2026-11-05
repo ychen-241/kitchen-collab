@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+*.egg
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 测试与缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 运行产物（审计日志含业务数据，不入库）
+data/audit_log.jsonl
+data/*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 机密：绝不入库
+.env
+*.key
+config/local.yaml
+config/local.json

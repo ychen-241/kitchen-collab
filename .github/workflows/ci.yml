@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+      - name: 运行测试
+        run: |
+          export PYTHONPATH=src
+          python -m unittest discover -s tests -v
+      - name: 冒烟：demo 全流程
+        run: |
+          export PYTHONPATH=src
+          python examples/demo.py

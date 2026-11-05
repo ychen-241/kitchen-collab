@@ -1,0 +1,73 @@
+# kitchen-collab 默认配置（非机密：默认参数、菜品工艺卡、校验规则）
+# 生产部署时可用环境变量 KITCHEN_CONFIG 指向门店私有配置
+
+# 档口与看板
+valid_tables: [T01, T02, T03, T04, T05, T06, T07, T08, T09, T10, T11, T12]
+
+# 排序权重（确定性规则，非模型黑箱）
+weights:
+  allergen: 100        # P0 过敏单置顶
+  urge: 40             # 催菜加权
+  wait_per_min: 2      # 每等待 1 分钟加分
+  takeout: 10          # 外卖时限
+
+# 验收口径（与报价单验收标准一致）
+targets:
+  serve_minutes: 18    # 出餐时长 28 → 18 分钟
+  missed_per_night: 3  # 漏菜 14 → 3 次
+  urge_drop_pct: 30    # 催菜查询下降 30%+
+  allergen_pass_rate: 100  # 过敏备注传递完整率，硬性门槛
+
+# 解析置信度阈值：低于此值进人工修复队列，不进自动推荐样本
+confidence_threshold: 0.6
+
+# 菜品工艺卡（演示数据；真实部署由门店食安负责人维护过敏原库）
+menu:
+  - name: 清蒸鲈鱼
+    station: 蒸柜
+    steps: [{name: 宰杀改刀, minutes: 3}, {name: 蒸制, minutes: 8}, {name: 淋油装盘, minutes: 2}]
+    allergens: [鱼]
+    spec_options: [清淡, 豉油]
+    aliases: [鲈鱼, 清蒸鱼]
+
+  - name: 宫保鸡丁
+    station: 炒锅
+    steps: [{name: 备料, minutes: 2}, {name: 爆炒, minutes: 5}, {name: 装盘, minutes: 1}]
+    allergens: [花生]
+    spec_options: [微辣, 中辣, 特辣, 不辣]
+    aliases: [宫保鸡, KJCJ]
+
+  - name: 红烧肉
+    station: 炖灶
+    steps: [{name: 焯水, minutes: 3}, {name: 红烧, minutes: 25}, {name: 收汁装盘, minutes: 2}]
+    allergens: [猪肉]
+    spec_options: []
+    aliases: [毛氏红烧肉]
+
+  - name: 蒜蓉西兰花
+    station: 炒锅
+    steps: [{name: 备料, minutes: 1}, {name: 清炒, minutes: 3}, {name: 装盘, minutes: 1}]
+    allergens: [蒜]
+    spec_options: [免蒜]
+    aliases: [西兰花]
+
+  - name: 酸辣土豆丝
+    station: 炒锅
+    steps: [{name: 切丝, minutes: 2}, {name: 爆炒, minutes: 3}, {name: 装盘, minutes: 1}]
+    allergens: []
+    spec_options: [微辣, 中辣, 不辣]
+    aliases: [土豆丝]
+
+  - name: 番茄蛋汤
+    station: 汤灶
+    steps: [{name: 备料, minutes: 1}, {name: 煮制, minutes: 5}]
+    allergens: [蛋]
+    spec_options: []
+    aliases: [番茄汤]
+
+  - name: 凉拌黄瓜
+    station: 凉菜
+    steps: [{name: 拍黄瓜, minutes: 2}, {name: 调味装盘, minutes: 1}]
+    allergens: [蒜]
+    spec_options: [免蒜]
+    aliases: [拍黄瓜]

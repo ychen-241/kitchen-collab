@@ -1,0 +1,45 @@
+{
+  "description": "样例订单：覆盖 POS 单、纸质补录、套餐拆单过敏、外卖、电话单（菜名带错别字）",
+  "orders": [
+    {
+      "source": "pos",
+      "table_no": "T05",
+      "guest_count": 4,
+      "items": [
+        { "dish": "清蒸鲈鱼", "qty": 1, "spec": "清淡", "notes": [] },
+        { "dish": "宫保鸡丁", "qty": 1, "spec": "中辣", "notes": ["过敏:花生"] },
+        { "dish": "蒜蓉西兰花", "qty": 1, "spec": "", "notes": [] }
+      ]
+    },
+    {
+      "source": "paper",
+      "table_no": "T05",
+      "items": [
+        { "dish": "宫保鸡丁", "qty": 1, "spec": "中辣", "notes": [] },
+        { "dish": "酸辣土豆丝", "qty": 1, "spec": "微辣", "notes": [] }
+      ]
+    },
+    {
+      "source": "dine_scan",
+      "table_no": "T12",
+      "items": [
+        { "dish": "清蒸鲈鱼", "qty": 1, "spec": "", "notes": ["套餐拆单", "过敏:鱼"], "from_set": true },
+        { "dish": "番茄蛋汤", "qty": 1, "spec": "", "notes": ["套餐拆单"], "from_set": true }
+      ]
+    },
+    {
+      "source": "takeout",
+      "table_no": "WM-88",
+      "items": [
+        { "dish": "红烧肉", "qty": 1, "spec": "", "notes": [] }
+      ]
+    },
+    {
+      "source": "phone",
+      "table_no": "T07",
+      "items": [
+        { "dish": "宫保鸡丁面", "qty": 2, "spec": "", "notes": [] }
+      ]
+    }
+  ]
+}
