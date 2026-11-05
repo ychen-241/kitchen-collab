@@ -45,6 +45,8 @@ class FlowResult:
     receipts: list[str] = field(default_factory=list)
     audit_count: int = 0
     board: "StationBoardView | None" = None                 # 后向引用由渲染层展开
+    board_lines: list[str] = field(default_factory=list)    # 排菜完成时刻的看板快照（终端用）
+    board_snapshot: dict = field(default_factory=dict)      # {station: [task, ...]}（报告用）
 
 
 def build_system(config_path: str | None = None,
@@ -92,6 +94,10 @@ def run_flow(system: KitchenSystem | None = None,
     for oid, order in list(system.orders.items()):
         if order.status == OrderStatus.VALIDATED:
             system.bus.publish(Event(EventType.ORDER_VALIDATED, {"order_id": oid}))
+    # 排菜完成即拍快照：后续改派/催菜/完工会实时改动看板（完工即清格），
+    # 演示与报告要展示的是「排出来的板」，不是收市后的空板
+    result.board_lines = list(system.board.queue_lines())
+    result.board_snapshot = {st: list(ts) for st, ts in system.board.queues.items()}
     result.board = system.board
 
     # 6. 改派建议 + 人工确认

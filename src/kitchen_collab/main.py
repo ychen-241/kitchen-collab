@@ -101,7 +101,7 @@ def run_demo() -> None:
         print(f"  {mark} {style.dim(s['order_id'])}（备注随单传递已核）")
 
     section("厨师长 · 档口看板（可解释排序）：")
-    print("\n".join("  " + l for l in system.board.queue_lines()))
+    print("\n".join("  " + l for l in flow.board_lines))
 
     section("厨师长 · 负载均衡建议（待确认，不自动执行）：")
     print(f"  {style.DOT} {flow.suggestion['text']}")

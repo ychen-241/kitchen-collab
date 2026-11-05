@@ -124,7 +124,7 @@ def render_report(system, flow: FlowResult) -> str:
 
     # 看板
     boards = []
-    for station, tasks in flow.board.queues.items():
+    for station, tasks in flow.board_snapshot.items():
         rows = "".join(
             f"<tr><td style='white-space:nowrap'>{_prio_tag(t.priority)}</td>"
             f"<td>{_e(t.dish_name)}{' x%d' % t.qty if t.qty > 1 else ''}</td>"
